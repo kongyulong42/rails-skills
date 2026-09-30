@@ -601,8 +601,9 @@
     const parts = [];
     if (risk.complexity_head != null) parts.push((risk.complexity_base != null ? Math.round(risk.complexity_base) + "→" : "") + Math.round(risk.complexity_head));
     if (risk.commits) parts.push(esc(risk.commits) + " commits");
+    if (risk.smells) parts.push("+" + risk.smells + " smell" + (risk.smells === 1 ? "" : "s"));
     const num = parts.length ? "<span class='num'>" + parts.join(" · ") + "</span>" : "";
-    return "<span class='badge l" + risk.level + "' title='complexity added by the PR · commits in the PR touching this file'>" + esc(label) + num + "</span>";
+    return "<span class='badge l" + risk.level + "' title='complexity added by the PR · commits in the PR touching this file · smells added'>" + esc(label) + num + "</span>";
   }
 
   async function resolveAnchor(link, file) {

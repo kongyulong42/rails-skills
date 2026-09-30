@@ -6,6 +6,27 @@ release notes on julianrubisch/skills.
 
 ## Unreleased
 
+## v1.6.0
+
+- Add `reference/reek.yml`: a reek configuration where every detector is
+  on or off because of a principle in `smells.md` or `review-quality.md`,
+  with the principle named in a comment, and Rails-aware directory rules.
+- **jr-rails-pr-tour**: smells the PR added (reek delta, base vs head,
+  pack config) are a third risk input next to complexity delta and in-PR
+  churn: `FeatureEnvy`, `DataClump`, `RepeatedConditional`,
+  `TooManyMethods` badge level 2, any other smell level 1, count shown on
+  the badge, smell and context named in `look_for`; a file that adds a
+  smell is never "safe to skim". Projects with their own `.reek.yml` are
+  asked which config to use.
+- **jr-rails-second-opinion**: the CLI brief carries the reek smell delta
+  as evidence, and `standards.md` names the inventory command.
+- **jr-rails-pr-tour**: the output is a choice: page (artifact), PR/MR
+  comment, or both. The comment form (`references/comment-template.md`)
+  keeps the order, a task-list checkbox per file and per route, diff
+  links, text badges and the dev-server instructions, and is edited in
+  place on re-runs; it drops the scatter and per-reviewer tick sync.
+  `--artifact` / `--comment` skip the question.
+
 ## v1.5.1
 
 - **jr-rails-pr-tour**: dev-server routes link the concrete path

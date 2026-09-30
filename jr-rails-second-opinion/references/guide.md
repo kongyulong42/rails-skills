@@ -216,6 +216,11 @@ Reference files you may read for the rationale (read-only):
 security.md, and any other file standards.md names for the dimensions in
 scope; resolve with realpath from the skill directory>
 
+SMELL DELTA (reek, this pack's config, head minus base; treat as evidence to
+confirm or refute, not as findings):
+<rows as `file | smell_type | context | message`, or "none added; N removed",
+or "reek not run">
+
 OUTPUT FORMAT:
 1. Findings (ordered by severity, H first), each labeled H/M/L with file:line citation
 2. Risks / missing considerations

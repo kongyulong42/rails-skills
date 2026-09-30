@@ -42,7 +42,9 @@ not rewrite the page.
 - `/jr-rails-pr-tour <PR or MR URL>`
 - `/jr-rails-pr-tour <number>` (host inferred from `git remote`)
 - `/jr-rails-pr-tour` (current branch vs `main`, no host links)
-- `--comment` also posts the tour as a PR/MR comment for co-reviewers
+- `--artifact` / `--comment` choose the output (page, or PR/MR comment
+  with checkboxes and file links); both flags for both. Without a flag
+  the skill asks
 - `--triage` splits off a "Safe to skim" chapter for mechanical changes
   (asked automatically above 30 files)
 
@@ -64,7 +66,7 @@ links are the substitute.
 | 2 | Signals: Rails layer per file, symbol references between changed files, commit structure | edge list, layer map |
 | 3 | Risk: complexity the PR added (`attractor diff`, else `flog`, else diff size) and how many of the PR's commits touched each file; **ask** whether to add the churn × complexity scatter | badge per file, optional chart data |
 | 4 | Chapters: cluster by coupling, order chapters by layer, order files by dependency; **name and reshape chapters by judgement**; list the routes to open on a dev server per chapter | tour JSON |
-| 5 | Publish the artifact; optionally post the markdown comment | link |
+| 5 | **Ask** for the output: page (artifact), PR/MR comment, or both; publish | link and/or comment |
 
 ## Hard rules
 
@@ -108,6 +110,7 @@ jr-rails-pr-tour/
 └── references/
     ├── guide.md                 # Phases 0-5 in detail, tour JSON schema
     ├── hosts.md                 # gh / glab commands, anchor formats, comment posting
+    ├── comment-template.md      # The tour as a PR/MR comment (load when that output is chosen)
     ├── qa-devcontainer.md       # Throwaway container for QA, outside the repo (load only on a yes)
     └── tour-template.html       # Artifact page; fill the data block only
 ```

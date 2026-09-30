@@ -96,20 +96,9 @@ two-window setup (tour left, diff right) without frames. The template does
 this; do not change the target name, and do not add `rel="noopener"` (it
 would sever the window name and spawn new tabs).
 
-## Posting the tour as a comment (`--comment`)
+## Posting the tour as a comment
 
-The template's data block renders to markdown with the same chapter order
-(see the guide's markdown section). Post it with:
-
-```bash
-gh pr comment $PR --body-file tour.md
-glab mr note $PR --message "$(cat tour.md)"
-```
-
-Post once. If a tour comment already exists (search for the
-`<!-- jr-rails-pr-tour -->` marker), edit it instead:
-
-```bash
-gh api repos/:owner/:repo/issues/comments/$ID -X PATCH -f body=@tour.md
-glab api projects/:id/merge_requests/$PR/notes/$ID -X PUT -f body=@tour.md
-```
+The comment form, its rendering rules and the post/edit commands for both
+hosts are in `comment-template.md`. The body starts with
+`<!-- jr-rails-pr-tour -->`; a re-run finds that marker and edits the
+comment in place rather than posting a second one.

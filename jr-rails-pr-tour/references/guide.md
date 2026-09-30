@@ -65,9 +65,11 @@ What qualifies as safe to skim, each with its test:
 | Additions of translation keys, fixtures, seeds | no logic; the file is pure data |
 | Deleted dead code | a deleted file with no remaining references at `$HEAD` (`git grep -l <constant>` empty) |
 
-Never skim: anything with `risk.level` 2, any migration, any file in
-`config/`, any deleted file that still has references, and any test whose
-subject is in a real chapter. When in doubt, it is not safe to skim.
+Never skim: anything with `risk.level` 2, any file that **adds a smell**
+(Phase 3; the diff can look mechanical while the code got worse), any
+migration, any file in `config/`, any deleted file that still has
+references, and any test whose subject is in a real chapter. When in
+doubt, it is not safe to skim.
 
 The skim chapter: `title` "Safe to skim", `skim: true`, `lede` says what
 kinds are in it and how many of each, and every file's `why` is its
@@ -184,6 +186,29 @@ and the signal is gone; say so in the summary.
 Historical hotspot status (attractor's `refactor_head`) is a modifier,
 not an input: it says the terrain is fragile, not that this change is.
 
+A third input names *what kind* of risk: **smells the PR added**, from
+reek with the pack's configuration (`reference/reek.yml`, each detector
+tied to a principle in `smells.md` / `review-quality.md`). Run it on the
+changed Ruby files at base and at head, in the same worktrees as
+attractor (or `git show` into a scratch directory), and keep the delta:
+
+```bash
+command -v reek || gem install reek
+CFG=$(realpath reference/reek.yml)           # from the skill directory
+(cd "$SCRATCH/base" && reek -c "$CFG" --format json $ruby_files) > reek-base.json
+(cd "$SCRATCH/head" && reek -c "$CFG" --format json $ruby_files) > reek-head.json
+```
+
+Match rows on `smell_type` + `context` (`Order#total`), never on line
+numbers; rows in head only are **added**, rows in base only are
+**removed**. If the project ships its own `.reek.yml`, ask once: pack
+config (recommended), project config, or both with the pack's used for
+badges. Record which ran in `risk_source`.
+
+Smells weigh by what they predict (`smells.md` priorities): `FeatureEnvy`,
+`DataClump`, `RepeatedConditional` and `TooManyMethods` predict Divergent
+Change and Shotgun Surgery; the rest are local.
+
 ### Preferred: attractor
 
 #### Finding attractor
@@ -274,8 +299,10 @@ Badge levels from the rows:
 |---|---|---|
 | 2 | `reworked` | touched in ≥ 50% of the PR's commits, with `COMMITS` ≥ 4 |
 | 2 | `grew` | `delta > 20` |
+| 2 | `smell` | adds a `FeatureEnvy`, `DataClump`, `RepeatedConditional` or `TooManyMethods` |
 | 1 | `grew` | `delta > 5`, or `complexity_base` nil and `complexity_head > 30` (large new file) |
 | 1 | `reworked` | touched in ≥ 3 commits |
+| 1 | `smell` | adds any other smell |
 | 0 | none | everything else, including improvements (`delta < 0`; note those in "why", reviewers like to see them) |
 
 Then apply the modifier: `refactor_head` true (top percentile of churn ×
@@ -283,8 +310,11 @@ complexity in the repo) raises the level by one, to a maximum of 2, and
 the label becomes `hotspot`. When two rules fire, keep the higher level and
 the label of the rule that produced it. Put the numbers in the badge text
 so the reviewer sees why: `complexity_head` (and `complexity_base` when it
-exists) in `risk.complexity_*`, and the commit count in `risk.commits` as
-`"7/9"`.
+exists) in `risk.complexity_*`, the commit count in `risk.commits` as
+`"7/9"`, and added smells in `risk.smells` as a count. Name the smell and
+its context in `look_for`, in one neutral sentence: "Adds FeatureEnvy in
+Order#ship (line 41): six calls on address." A removed smell goes in
+`why` as credit.
 
 Also carry the churn numbers, for the scatter the page draws (below):
 `risk.churn` is attractor's head `churn`, and `risk.churn_base` is
@@ -605,6 +635,9 @@ computation beyond anchors and progress.
 
 A chapter with `"skim": true` renders collapsed at the end with a "mark
 all as read" button (Phase 1b); it is always the last chapter.
+`risk.smells` is the number of smells the PR added to the file (omit
+when 0); `risk.label` may be `smell`. `risk_source` names every tool that
+ran, e.g. `"attractor diff 2.8.0, reek 6.5.0 (pack config)"`.
 `risk.churn` and `risk.churn_base` are numbers (see Phase 3); with
 `complexity_*` they feed the scatter, which the page draws only when
 `scatter` is `true` (the user's answer). `landscape` is optional:
@@ -629,6 +662,24 @@ verbatim. `line` is optional; GitLab needs both
 
 ## Phase 5: Publish
 
+### Output target (ask)
+
+Unless a flag decided it (`--artifact`, `--comment`, or both), ask once
+with `AskUserQuestion`:
+
+- **Page** (recommended): the artifact below. Scatter, landscape, chapter
+  index, per-reviewer synced ticks, live base URL.
+- **PR/MR comment**: the tour where the review happens, for everyone on
+  the PR, no claude.ai needed. Keeps the order, one checkbox per file and
+  per route (the host stores the state, shared by all), file links into
+  the diff, text badges, and the dev-server instructions. Drops the
+  scatter, the landscape, and per-reviewer ticks. `comment-template.md`.
+- **Both**: the page, and a comment that links to it.
+
+In git-only mode (no host) only the page is possible; skip the question.
+
+### Page
+
 1. Copy `tour-template.html` to the scratchpad and replace the contents of
    the `tour-data` script block with the JSON. Change nothing else. The
    `<title>` is set by the page from `pr.title`, so the template's own title
@@ -647,12 +698,14 @@ verbatim. `line` is optional; GitLab needs both
    variable part.
 3. Report the link and one sentence on what the reviewer will find. Remind
    them once that links open the PR in a second tab that is reused.
-4. With `--comment`, render the markdown form and post it (`hosts.md`).
-   Keep it short: summary, then chapters as headings with a bullet per
-   file (`path`, `why`), no `look_for`, no badges, and the artifact link at
-   the top. End with a "Try it" list of the `qa.routes` paths and notes,
-   without the base URL. Start the body with `<!-- jr-rails-pr-tour -->` so
-   a re-run can find and edit it.
+### Comment
+
+Render the tour JSON with `comment-template.md` (same prose, same order,
+task-list checkboxes, diff anchors computed in the shell) and post or
+edit it with the commands there. Start the body with
+`<!-- jr-rails-pr-tour -->` so a re-run finds and edits the existing
+comment. With "Both", put the artifact link in the comment's first
+paragraph.
 
 ## Troubleshooting
 

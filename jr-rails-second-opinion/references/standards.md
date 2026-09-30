@@ -48,6 +48,10 @@ Judge against:
 - Query logic belongs in scopes or query objects, not controllers:
   `reference/patterns.md` (Query Objects, Atomic vs Complex Scopes)
 - A smell maps to a named refactoring; cite it: `reference/refactorings/`
+- Mechanical inventory: `reek -c reference/reek.yml --format json <files>`,
+  run at base and head, delta by `smell_type` + `context`. Every detector
+  in that file is tied to one of the principles above; paste the delta
+  into the brief's SMELL DELTA slot and cite rows in Self-Review
 
 ## Performance
 

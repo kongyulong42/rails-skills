@@ -1,0 +1,169 @@
+# Reek configuration aligned with this pack's review principles.
+#
+# Use: reek -c reference/reek.yml --format json <files>
+#
+# Every detector below is on or off because of a principle in reference/smells.md or
+# reference/review-quality.md; the comment names it. Thresholds follow the numbers those
+# files give. Detectors not listed keep reek's defaults. When a project ships its own
+# .reek.yml, ask which one to run; findings against a foreign config are not the pack's.
+---
+detectors:
+  # Ruby Science smells the pack ranks highest (smells.md, priority 3, 6): Feature Envy
+  # and Data Clumps predict Divergent Change and Shotgun Surgery.
+  FeatureEnvy:
+    enabled: true
+  DataClump:
+    enabled: true
+    max_copies: 2
+    min_clump_size: 2
+
+  # Long Parameter List (smells.md, priority 5): the refactoring is Parameter Object.
+  LongParameterList:
+    enabled: true
+    max_params: 3
+  LongYieldList:
+    enabled: true
+    max_params: 3
+
+  # Flag arguments are control coupling (review-quality.md "Control Coupling"): a boolean
+  # that changes behaviour means two methods.
+  ControlParameter:
+    enabled: true
+  BooleanParameter:
+    enabled: true
+
+  # Long Method (smells.md): "more than ~10 lines". Reek counts statements; 10 matches the
+  # signal, reek's default of 5 flags ordinary Rails actions.
+  TooManyStatements:
+    enabled: true
+    max_statements: 10
+
+  # Large Class / God Class (smells.md, priority 0 and 6): "10+ public methods, multiple
+  # unrelated instance variables".
+  TooManyMethods:
+    enabled: true
+    max_methods: 15
+  TooManyInstanceVariables:
+    enabled: true
+    max_instance_variables: 4
+  TooManyConstants:
+    enabled: true
+    max_constants: 5
+
+  # Case Statement (smells.md, priority 4): repeated conditionals on the same value want
+  # polymorphism or a Null Object.
+  RepeatedConditional:
+    enabled: true
+    max_ifs: 2
+
+  # Memoize expensive accessors (review-quality.md): the same call twice in one method is
+  # the signal.
+  DuplicateMethodCall:
+    enabled: true
+    max_calls: 2
+    allow_calls:
+      - params
+      - request
+      - current_user
+      - Current
+
+  # Tell, Don't Ask (shared/principles.md): a method that ignores self belongs elsewhere.
+  UtilityFunction:
+    enabled: true
+    public_methods_only: true
+
+  NestedIterators:
+    enabled: true
+    max_allowed_nesting: 2
+    ignore_iterators:
+      - tap
+      - each_with_object
+      - transaction
+
+  # Naming (review-quality.md): keep, with the short names Rails code legitimately uses.
+  UncommunicativeVariableName:
+    enabled: true
+    accept:
+      - id
+      - db
+      - io
+      - to
+      - _
+  UncommunicativeParameterName:
+    enabled: true
+    accept:
+      - id
+      - to
+      - _
+  UncommunicativeMethodName:
+    enabled: true
+  UncommunicativeModuleName:
+    enabled: true
+
+  UnusedParameters:
+    enabled: true
+  UnusedPrivateMethod:
+    enabled: true
+  ManualDispatch:
+    enabled: true
+  ModuleInitialize:
+    enabled: true
+  SubclassedFromCoreClass:
+    enabled: true
+  ClassVariable:
+    enabled: true
+
+  # Off: the pack prefers safe navigation over `rescue nil`, not over `nil?`; Rails
+  # presence idioms would drown the signal (review-quality.md "Safe Navigation").
+  NilCheck:
+    enabled: false
+
+  # Off: reek wants a comment on every class; the pack's comments explain only the why,
+  # never the what, so an absent class comment is correct.
+  IrresponsibleModule:
+    enabled: false
+
+  # Off: attr_writer/attr_accessor on models and form objects is the design, not a smell.
+  Attribute:
+    enabled: false
+
+  # Off: reek flags instance variables read before assignment in the same class; Rails
+  # controllers and views share ivars by design (see the directory rule below too).
+  InstanceVariableAssumption:
+    enabled: false
+
+  # Off: `bang!` methods without a non-bang twin are idiomatic in Rails (save!/update!).
+  MissingSafeMethod:
+    enabled: false
+
+directories:
+  # Controllers hand ivars to views; that is their interface, not a smell.
+  "app/controllers":
+    TooManyInstanceVariables:
+      enabled: false
+  # Helpers and concerns are utility by construction.
+  "app/helpers":
+    UtilityFunction:
+      enabled: false
+  "app/models/concerns":
+    UtilityFunction:
+      enabled: false
+  "app/controllers/concerns":
+    UtilityFunction:
+      enabled: false
+  # Jobs: a thin perform that delegates is the goal (shared/jobs.md); the model owns the
+  # statements, so keep the job threshold tight.
+  "app/jobs":
+    TooManyStatements:
+      max_statements: 5
+
+exclude_paths:
+  - db
+  - config
+  - bin
+  - test
+  - spec
+  - vendor
+  - node_modules
+  - tmp
+  - public
